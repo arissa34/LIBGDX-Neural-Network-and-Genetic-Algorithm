@@ -21,4 +21,9 @@ public class AxonGene extends Gene {
         float newWeight = MathUtils.random(-1f, 1f);
         axon.setWeight(newWeight);
     }
+
+    @Override
+    public Gene clone() {
+        return new AxonGene(axon.clone());
+    }
 }

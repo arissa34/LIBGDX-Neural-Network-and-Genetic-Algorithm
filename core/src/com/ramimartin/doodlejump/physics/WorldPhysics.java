@@ -16,8 +16,6 @@ import com.badlogic.gdx.physics.box2d.Shape;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
-import com.ramimartin.doodlejump.ai.DoodleBrain;
-import com.ramimartin.doodlejump.ai.DoodleSensor;
 import com.ramimartin.doodlejump.model.AbsBodyModel;
 import com.ramimartin.doodlejump.model.DoodleModel;
 import com.ramimartin.doodlejump.model.GroundModel;
@@ -111,8 +109,6 @@ public class WorldPhysics implements UpdatableListener, Disposable, ContactListe
             node=i.next();
             if(oBj.getUserData() instanceof AbsBodyModel && ((AbsBodyModel) oBj.getUserData()).hasToBeDestroy()){
                 world.destroyBody(oBj);
-            }else if(oBj.getUserData() instanceof DoodleSensor && ((DoodleSensor) oBj.getUserData()).hasToBeDestroy()){
-                world.destroyBody(oBj);
             }
         }
     }
@@ -122,24 +118,6 @@ public class WorldPhysics implements UpdatableListener, Disposable, ContactListe
     public void beginContact(Contact contact) {
         Fixture fa = contact.getFixtureA();
         Fixture fb = contact.getFixtureB();
-
-        if (fb.getBody().getUserData() instanceof DoodleSensor && fa.getBody().getUserData() instanceof PlateformModel){
-            PlateformModel plateformModel = (PlateformModel) fa.getBody().getUserData();
-            DoodleSensor doodleSensor = (DoodleSensor) fb.getBody().getUserData();
-            doodleSensor.setDistanceContact(plateformModel.getY() - doodleSensor.getY());
-            doodleSensor.setHasContact(true);
-            doodleSensor.setHasContactWithObstacle(plateformModel.hasObstacle());
-            return;
-        }
-
-        if (fa.getBody().getUserData() instanceof DoodleSensor && fb.getBody().getUserData() instanceof PlateformModel){
-            PlateformModel plateformModel = (PlateformModel) fb.getBody().getUserData();
-            DoodleSensor doodleSensor = (DoodleSensor) fa.getBody().getUserData();
-            doodleSensor.setDistanceContact(plateformModel.getY() - doodleSensor.getY());
-            doodleSensor.setHasContact(true);
-            doodleSensor.setHasContactWithObstacle(plateformModel.hasObstacle());
-            return;
-        }
 
         if (fa.getBody().getUserData() instanceof GroundModel && fb.getBody().getUserData() instanceof DoodleModel){
             ((DoodleModel)fb.getBody().getUserData()).jump();
@@ -155,22 +133,6 @@ public class WorldPhysics implements UpdatableListener, Disposable, ContactListe
     public void endContact(Contact contact) {
         Fixture fa = contact.getFixtureA();
         Fixture fb = contact.getFixtureB();
-
-        if (fb.getBody().getUserData() instanceof DoodleSensor && fa.getBody().getUserData() instanceof PlateformModel){
-            DoodleSensor doodleSensor = (DoodleSensor) fb.getBody().getUserData();
-            doodleSensor.setDistanceContact(0);
-            doodleSensor.setHasContact(false);
-            doodleSensor.setHasContactWithObstacle(false);
-            return;
-        }
-
-        if (fa.getBody().getUserData() instanceof DoodleSensor && fb.getBody().getUserData() instanceof PlateformModel){
-            DoodleSensor doodleSensor = (DoodleSensor) fa.getBody().getUserData();
-            doodleSensor.setDistanceContact(0);
-            doodleSensor.setHasContact(false);
-            doodleSensor.setHasContactWithObstacle(false);
-            return;
-        }
     }
 
     @Override

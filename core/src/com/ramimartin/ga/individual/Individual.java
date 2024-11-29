@@ -1,11 +1,9 @@
 package com.ramimartin.ga.individual;
 
-import com.badlogic.ashley.core.Engine;
-import com.badlogic.ashley.core.Entity;
 import com.ramimartin.ga.chromosome.Chromosome;
 import com.ramimartin.ga.fitness.Fitness;
 
-public abstract class Individual <T extends Chromosome> extends Entity {
+public abstract class Individual <T extends Chromosome> {
 
     protected Fitness fitness;
     protected T chromosome;
@@ -15,7 +13,6 @@ public abstract class Individual <T extends Chromosome> extends Entity {
 
     public void addChromosome(T chromosome){
         this.chromosome = chromosome;
-        add(this.chromosome);
     }
 
     public  T getChromosome(){
@@ -28,16 +25,6 @@ public abstract class Individual <T extends Chromosome> extends Entity {
 
     public void addFitness(Fitness fitness) {
         this.fitness = fitness;
-        add(fitness);
-    }
-
-    public void addToPopulation(Engine engine){
-        if(!engine.getEntities().contains(this, true))
-            engine.addEntity(this);
-    }
-
-    public void removeToPopulation(Engine engine){
-        engine.removeEntity(this);
     }
 
     public boolean hasFitness(){

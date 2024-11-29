@@ -2,6 +2,7 @@ package com.ramimartin.neural;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ArrayMap;
 import com.badlogic.gdx.utils.ObjectMap;
@@ -10,9 +11,7 @@ import java.util.Iterator;
 
 public class FeedForwardNeuralNetwork {
 
-    private float x, y;
-    private float width, height;
-
+    private int nbrHidden;
     private ArrayMap<Integer, Neuron> listNeurons;
     private Array<Neuron> listInputNeurons;
     private ArrayMap<Integer, Array<Neuron>> listHiddenNeurons;
@@ -20,10 +19,9 @@ public class FeedForwardNeuralNetwork {
     public Array<Axon> listOutputAxon;
     private float xOfst = 50, yOfst = 40;
 
-    public FeedForwardNeuralNetwork(float x, float y, int nbrInput, int nbrHiddenLayer, int nbrHidden, int nbrOutput) {
-        this.x = x;
-        this.y = y;
+    public FeedForwardNeuralNetwork(int nbrInput, int nbrHiddenLayer, int nbrHidden, int nbrOutput) {
 
+        this.nbrHidden = nbrHidden;
         int size = nbrInput + (nbrHiddenLayer * nbrHidden) + nbrOutput;
 
         listNeurons = new ArrayMap<Integer, Neuron>();
@@ -61,9 +59,9 @@ public class FeedForwardNeuralNetwork {
             Neuron n = new Neuron(0, yOffset + (yOfst * i));
             listInputNeurons.add(n);
             listNeurons.put(size, n);
-            if(nbrHiddenLayer == 0){
+            if (nbrHiddenLayer == 0) {
                 connect(n, listOutputNeurons);
-            }else{
+            } else {
                 connect(n, listHiddenNeurons.get(0));
             }
         }
@@ -81,26 +79,16 @@ public class FeedForwardNeuralNetwork {
     public void feedforward(float... inputs) {
         if (listInputNeurons.size != inputs.length) return;
 
-       // for (int i = 0; i < inputs.length; i++) {
-       //     Gdx.app.log("", "inputs " + i + " value : " + inputs[i]);
-       // }
-
         int index = 0;
         for (int i = 0; i < listInputNeurons.size; i++, index++) {
-            listInputNeurons.get(i).calculate(inputs[i]);
+            listInputNeurons.get(i).connectionsOut.get(0).setValue(inputs[i]);
         }
-
         for (int i = index; i < listNeurons.size; i++) {
             listNeurons.get(i).calculate();
         }
-
-       // for (int i = 0; i < listOutputAxon.size; i++) {
-       //     Gdx.app.log("", "output " + i + " value : " + listOutputAxon.get(i).getValue());
-       // }
-       // Gdx.app.log("", "-------------------");
     }
 
-    public void clearAxonValues(){
+    public void clearAxonValues() {
         Iterator<ObjectMap.Entry<Integer, Neuron>> iterator = listNeurons.iterator();
         while (iterator.hasNext()) {
             ObjectMap.Entry<Integer, Neuron> entry = iterator.next();
@@ -110,9 +98,19 @@ public class FeedForwardNeuralNetwork {
         }
     }
 
+    public void randomizeAxonValues() {
+        Iterator<ObjectMap.Entry<Integer, Neuron>> iterator = listNeurons.iterator();
+        while (iterator.hasNext()) {
+            ObjectMap.Entry<Integer, Neuron> entry = iterator.next();
+            for (int i = 0; i < entry.value.connectionsOut.size; i++) {
+                entry.value.connectionsOut.get(i).setWeight(MathUtils.random(-1.0f, 1.0f));
+            }
+        }
+    }
+
     public void render(ShapeRenderer shapeRenderer) {
         for (int i = 0; i < listNeurons.size; i++) {
-            listNeurons.get(i).render(x, y, shapeRenderer);
+            listNeurons.get(i).render(30, Gdx.graphics.getBackBufferHeight() - (nbrHidden * 25), shapeRenderer);
         }
     }
 
@@ -130,19 +128,30 @@ public class FeedForwardNeuralNetwork {
 
     public void importAxons(Array<Axon> listAxons) {
         Array<Axon> curent = exportAxons();
-        for(int i = 0; i < listAxons.size; i++){
+        for (int i = 0; i < listAxons.size; i++) {
             curent.get(i).setWeight(listAxons.get(i).getWeight());
         }
     }
 
     public void importAxons(double... listValues) {
         Array<Axon> curent = exportAxons();
-        for(int i = 0; i < listValues.length; i++){
-            curent.get(i).setWeight((float)listValues[i]);
+        for (int i = 0; i < listValues.length; i++) {
+            curent.get(i).setWeight((float) listValues[i]);
         }
     }
 
     final static double EPSILON = 1e-12;
+
+    /**
+     * Rééchelonne une valeur d'un intervalle d'origine à un autre intervalle cible tout en conservant sa proportion relative.
+     *
+     * @param valueCoord1 La valeur à rééchelonner dans l'intervalle d'origine.
+     * @param startCoord1 La borne inférieure de l'intervalle d'origine.
+     * @param endCoord1   La borne supérieure de l'intervalle d'origine.
+     * @param startCoord2 La borne inférieure de l'intervalle cible.
+     * @param endCoord2   La borne supérieure de l'intervalle cible.
+     * @return La valeur rééchelonnée dans l'intervalle cible.
+     */
     public static float map(float valueCoord1,
                             float startCoord1, float endCoord1,
                             float startCoord2, float endCoord2) {

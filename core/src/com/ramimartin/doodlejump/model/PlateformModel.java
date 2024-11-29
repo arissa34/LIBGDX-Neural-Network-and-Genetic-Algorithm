@@ -16,7 +16,6 @@ import com.ramimartin.ecs.component.listener.UpdatableListener;
 public class PlateformModel extends AbsBodyModel implements UpdatableListener, SpriteRenderListener, Pool.Poolable {
 
     private Sprite obstacleSprite;
-    private float x, y;
     public float scaleX, scaleY;
     private boolean hasObstacle;
     private boolean isMoving;
@@ -46,16 +45,10 @@ public class PlateformModel extends AbsBodyModel implements UpdatableListener, S
         }
         body.setUserData(this);
         setPosition(x, y);
-
     }
 
     public PlateformModel setPos(float x, float y) {
         setPosition(x, y);
-        return this;
-    }
-
-    public PlateformModel attach() {
-        attachEntity();
         return this;
     }
 
@@ -109,6 +102,9 @@ public class PlateformModel extends AbsBodyModel implements UpdatableListener, S
     @Override
     public void reset() {
         dettachEntity();
+    }
+
+    public void dispose() {
         destroyBody();
         shape.dispose();
     }

@@ -13,7 +13,7 @@ public class JumpFitness extends Fitness {
 
     @Override
     public float caclFitness() {
-         fitness = doodleModel.getBestHeight();
+         fitness = doodleModel.getBestHeight()*10;
         return fitness;
     }
 

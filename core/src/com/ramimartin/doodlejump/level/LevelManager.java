@@ -1,8 +1,8 @@
 package com.ramimartin.doodlejump.level;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Pool;
 import com.ramimartin.MainClass;
 import com.ramimartin.doodlejump.camera.VerticalCamera;
 import com.ramimartin.doodlejump.model.DoodleModel;
@@ -21,8 +21,14 @@ public class LevelManager implements UpdatableListener {
     private float yMaxxToAdd = 2000/ WorldPhysics.PTM;
     private VerticalCamera camera;
 
-    public LevelManager() {
+    private final Pool<PlateformModel> platformPool = new Pool<PlateformModel>(10) {
+        @Override
+        protected PlateformModel newObject() {
+            return new PlateformModel();
+        }
+    };
 
+    public LevelManager() {
         this.camera = VerticalCamera.get();
         new LevelModel(camera);
         platforms = new Array<PlateformModel>();
@@ -38,58 +44,64 @@ public class LevelManager implements UpdatableListener {
         platforms.clear();
         float x = MathUtils.random(-270f/ WorldPhysics.PTM, -170f/ WorldPhysics.PTM);
         currentYgenerated = 0;
-        platforms.add(new PlateformModel(x, currentYgenerated));
+        platforms.add(platformPool.obtain().setPos(x, currentYgenerated));
         platforms.first().setHasObstacle(false);
         platforms.first().setMoving(false);
         platforms.first().attachEntity();
         addPlatforms();
     }
 
-    private void addPlatforms(){
-        currentYgenerated += MathUtils.random(250f/ WorldPhysics.PTM, 310f/ WorldPhysics.PTM);
+    private void addPlatforms() {
+        currentYgenerated += MathUtils.random(250f / WorldPhysics.PTM, 310f / WorldPhysics.PTM);
         float max = currentYgenerated + yMaxxToAdd;
-        int index = platforms.size;
-        for (float y = currentYgenerated; y < max; y += MathUtils.random(240f/ WorldPhysics.PTM, 300f/ WorldPhysics.PTM)) {
-            PlateformModel plateformModel = new PlateformModel(MathUtils.random(-270f/ WorldPhysics.PTM, 270f/ WorldPhysics.PTM), y);
+
+        for (float y = currentYgenerated; y < max; y += MathUtils.random(240f / WorldPhysics.PTM, 300f / WorldPhysics.PTM)) {
+            PlateformModel plateformModel = platformPool.obtain().setPos(MathUtils.random(-270f / WorldPhysics.PTM, 270f / WorldPhysics.PTM), y);
             platforms.add(plateformModel);
             plateformModel.attachEntity();
             currentYgenerated = y;
-            if(y < MainClass.HEIGHT /WorldPhysics.PTM){
+
+            if (y < MainClass.HEIGHT / WorldPhysics.PTM) {
                 plateformModel.setHasObstacle(false);
                 plateformModel.setMoving(false);
-            }else{
-
-                if(plateformModel.hasObstacle() && platforms.get(index - 1) != null && platforms.get(index - 1).hasObstacle()){
-                    plateformModel.setHasObstacle(false);
-                }
-
-                if(plateformModel.hasObstacle() && platforms.get(index - 2) != null && platforms.get(index - 2).hasObstacle()){
-                    plateformModel.setHasObstacle(false);
-                }
-
-                if(plateformModel.hasObstacle() && platforms.get(index - 3) != null && platforms.get(index - 3).hasObstacle()){
-                    plateformModel.setHasObstacle(false);
-                }
-
-                if (plateformModel.isMoving() && platforms.get(index - 1) != null && platforms.get(index - 1).isMoving()) {
-                    plateformModel.setMoving(false);
-                }
-
-                if (plateformModel.isMoving() && platforms.get(index - 2) != null && platforms.get(index - 2).isMoving()) {
-                    plateformModel.setMoving(false);
-                }
-
-                if (plateformModel.isMoving() && platforms.get(index - 3) != null && platforms.get(index - 3).isMoving()) {
-                    plateformModel.setMoving(false);
-                }
+            } else {
+                ensureObstacleConstraints(plateformModel, platforms);
+                ensureMovementConstraints(plateformModel, platforms);
             }
-            index++;
+        }
+    }
+
+    private void ensureObstacleConstraints(PlateformModel plateformModel, Array<PlateformModel> platforms) {
+        // Vérifie jusqu'aux 3 dernières plateformes pour éviter les obstacles consécutifs
+        int size = platforms.size;
+        for (int i = 1; i <= 3; i++) {
+            if (size - i >= 0 && plateformModel.hasObstacle() && platforms.get(size - i).hasObstacle()) {
+                plateformModel.setHasObstacle(false);
+                break;
+            }
+        }
+    }
+
+    private void ensureMovementConstraints(PlateformModel plateformModel, Array<PlateformModel> platforms) {
+        // Vérifie jusqu'à 3 dernières plateformes pour éviter plusieurs plateformes mobiles consécutives
+        int size = platforms.size;
+        int movingCount = 0;
+
+        for (int i = 1; i <= 3; i++) {
+            if (size - i >= 0 && platforms.get(size - i).isMoving()) {
+                movingCount++;
+            }
+        }
+
+        // Si 2 ou plus plateformes mobiles consécutives, désactiver le mouvement de l'actuelle
+        if (movingCount >= 2) {
+            plateformModel.setMoving(false);
         }
     }
 
     public void reset() {
         for (int i = 0; i < platforms.size; i++) {
-            platforms.get(i).reset();
+            platformPool.free(platforms.get(i));
         }
         platforms.clear();
     }

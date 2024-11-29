@@ -68,18 +68,12 @@ public abstract class Population<I extends Individual, P extends PopulationCompo
 
     @Override
     public int compare(I i1, I i2) {
-       //if (i1.getValue() > i2.getValue()) {
-       //    return -1;
-       //} else if (i1.getValue() < i2.getValue()) {
-       //    return 1;
-       //}
-       //return 0;
-
-        if(i1 == null) return 0;
-        if(i2 == null) return 0;
-        if(i1.getFitness() == null) return 0;
-        if(i2.getFitness() == null) return 0;
+        if(i1 == null || i2 == null || i1.getFitness() == null || i2.getFitness() == null ) return 0;
         return Float.compare(i2.getFitness().getValue(), i1.getFitness().getValue());
+    }
+
+    public void sort(){
+        population.sort(this);
     }
 
     public void setPopulationFitness(float fitness) {

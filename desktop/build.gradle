@@ -2,6 +2,7 @@ apply plugin: "java"
 
 sourceCompatibility = 1.8
 sourceSets.main.java.srcDirs = [ "src/" ]
+sourceSets.main.resources.srcDirs = ["../android/assets"]
 
 project.ext.mainClassName = "com.ramimartin.DesktopLauncher"
 project.ext.assetsDir = new File("../android/assets");

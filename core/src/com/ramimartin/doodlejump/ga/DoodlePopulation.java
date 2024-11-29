@@ -1,17 +1,27 @@
 package com.ramimartin.doodlejump.ga;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Pool;
+import com.ramimartin.Config;
 import com.ramimartin.doodlejump.camera.VerticalCamera;
 import com.ramimartin.doodlejump.level.LevelManager;
 import com.ramimartin.doodlejump.model.DoodleModel;
-import com.ramimartin.ga.chromosome.Chromosome;
+import com.ramimartin.doodlejump.model.PlateformModel;
 import com.ramimartin.ga.population.Population;
 import com.ramimartin.ga.utils.CrossoverUtils;
+import com.ramimartin.ga.utils.MutationUtils;
 import com.ramimartin.ga.utils.SelectionUtils;
 
 public class DoodlePopulation extends Population<DoodleIndividual, DoodlePopulationComponent> {
+
+
+    private final Pool<DoodleModel> doodleModelPool = new Pool<DoodleModel>(Config.nbrPopulation) {
+        @Override
+        protected DoodleModel newObject() {
+            return new DoodleModel();
+        }
+    };
 
     public DoodlePopulation(int populationSize, float mutationRate, float crossoverRate, int elitismCount) {
         super(populationSize, mutationRate, crossoverRate, elitismCount);
@@ -20,7 +30,8 @@ public class DoodlePopulation extends Population<DoodleIndividual, DoodlePopulat
     @Override
     public void generateNewPopulation() {
         for (int i = 0; i < populationSize; i++) {
-            DoodleModel individual = new DoodleModel();
+            DoodleModel individual = doodleModelPool.obtain();
+            individual.getBrain().randomizeAxonValues();
             addIndividual(individual.getDoodleIndividual());
             individual.attachEntity();
         }
@@ -33,41 +44,39 @@ public class DoodlePopulation extends Population<DoodleIndividual, DoodlePopulat
         }
         Array<DoodleIndividual> newPopulation = new Array<DoodleIndividual>(populationSize);
         for (int i = 0; i < populationSize; i++) {
-            //DoodleModel individual = new DoodleModel();
-            //newPopulation.add(individual.getDoodleIndividual());
             newPopulation.add(null);
         }
 
+        sort();
         for (int populationIndex = 0; populationIndex < size(); populationIndex++) {
-            DoodleIndividual parent1 = getFittest(populationIndex);
 
-            // Apply crossover to this individual?
-            if (this.crossoverRate > Math.random() && populationIndex >= this.elitismCount) {
-
-                DoodleModel offspring = new DoodleModel();
-
-                // Find second parent
-                //DoodleIndividual parent2 = (DoodleIndividual) SelectionUtils.wheelRoulette(this);
-                DoodleIndividual parent2 = (DoodleIndividual) SelectionUtils.tournament(this, 5);
-
-                CrossoverUtils.uniform(parent1, parent2, offspring.getDoodleIndividual());
-
+            if(populationIndex <= this.elitismCount){ /// Keep our best individual
+                newPopulation.set(populationIndex, getIndividual(populationIndex));
+            } else if(this.crossoverRate > Math.random()) { /// Crossover
+                DoodleModel offspring = doodleModelPool.obtain();
+                DoodleIndividual parentElite1 = (DoodleIndividual) SelectionUtils.tournament(this, Config.elitismCount);
+                DoodleIndividual parentElite2 = (DoodleIndividual) SelectionUtils.tournament(this, Config.elitismCount);
+                //DoodleIndividual parent2 = getIndividual(populationIndex);
+                CrossoverUtils.uniform(parentElite1, parentElite2, offspring.getDoodleIndividual());
+                //CrossoverUtils.singlePoint(parentElite1, parentElite2, offspring.getDoodleIndividual(), offspring.getDoodleIndividual().getChromosome().getListGene().size/2);
                 // Add offspring to new population
                 newPopulation.set(populationIndex, offspring.getDoodleIndividual());
-            } else {
-                // Add individual to new population without applying crossover
-                newPopulation.set(populationIndex, parent1);
-            }
-        }
-        for (int i = 0; i < populationSize; i++) {
-            if (!newPopulation.contains(population.get(i), true)) {
-                population.get(i).getDoodleModel().dispose();
+            } else { /// New random individual
+                DoodleIndividual randomIndividual = doodleModelPool.obtain().getDoodleIndividual();
+                randomIndividual.getDoodleModel().getBrain().randomizeAxonValues();
+                newPopulation.set(populationIndex, randomIndividual);
             }
         }
 
-        for (int i = 0; i < populationSize; i++) {
+        for (int i = 0; i < populationSize; i++) { /// Dispose unused doodle
+            if (!newPopulation.contains(population.get(i), true)) {
+                doodleModelPool.free(population.get(i).getDoodleModel());
+            }
+        }
+
+        for (int i = 0; i < populationSize; i++) { /// Add new doodle if position is empty
             if (newPopulation.get(i) == null) {
-                DoodleModel doodle = new DoodleModel();
+                DoodleModel doodle = doodleModelPool.obtain();
                 newPopulation.add(doodle.getDoodleIndividual());
             }
         }
@@ -81,24 +90,22 @@ public class DoodlePopulation extends Population<DoodleIndividual, DoodlePopulat
 
         VerticalCamera.get().snapToTarget(0, 0);
         VerticalCamera.get().yHeigher = 0;
-        LevelManager.get().reset();
-        LevelManager.get().generate();
+        //LevelManager.get().reset();
+        //LevelManager.get().generate();
     }
 
     @Override
     public void mutate() {
+        sort();
         for (int i = 0; i < population.size; ++i) {
-            //MutationUtils.swapGene(population.get(i));
-            Chromosome chromosome = population.get(i).getChromosome();
-            for (int g = 0; g < chromosome.getChromosomeLength(); g++) {
-                if (i > this.elitismCount) {
-                    float r = MathUtils.random(0f, 1f);
-                    if (mutationRate > r) {
-                        chromosome.getGene(g).mutate();
-                    }
-                }
+            if (i <= Config.elitismCount) continue;
+            //boolean hasChanged = MutationUtils.swapGene(population.get(i));
+            //boolean hasChanged = MutationUtils.randomMutation(population.get(i));
+            //boolean hasChanged = MutationUtils.perturbWeight(population.get(i));
+            boolean hasChanged = MutationUtils.invertWeight(population.get(i));
+            if(hasChanged){
+                population.get(i).loadChromosoneToBrain();
             }
-            population.get(i).loadChromosoneToBrain();
         }
     }
 

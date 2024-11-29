@@ -63,10 +63,6 @@ public abstract class AbsBodyModel extends AbsModel {
         WorldPhysics.get().getWorld().destroyBody(body);
     }
 
-    public void setSensor(boolean sensor){
-        body.getFixtureList().first().setSensor(sensor);
-    }
-
     public void setPosition(float x, float y){
         body.setTransform(position.set(x, y), body.getAngle());
     }

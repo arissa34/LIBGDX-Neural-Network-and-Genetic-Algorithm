@@ -34,11 +34,6 @@ public class MainClass extends Game {
 	public void create () {
         loadSettings();
 	    setScreen(new ScreenLoader(this, doodleScreen = new GameScreen()));
-
-        //ECS.get().getEngine().addSystem(new BitSystem());
-        //BitPopulation population = new BitPopulation(100, 0.00001f, 0.95f, 10);
-        //population.generateNewPopulation();
-        //population.startGeneticSelection(ECS.get().getEngine());
 	}
 
 	@Override

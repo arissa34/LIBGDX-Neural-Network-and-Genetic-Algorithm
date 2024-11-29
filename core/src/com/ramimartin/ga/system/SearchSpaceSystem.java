@@ -12,8 +12,6 @@ import com.ramimartin.ga.population.PopulationComponent;
 
 public abstract class SearchSpaceSystem<P extends PopulationComponent> extends IteratingSystem {
 
-    protected int maxGeneration = -1;
-    protected float maxTime = -1;
     protected ComponentMapper<P> populationComponentMapper;
 
     public SearchSpaceSystem(Class<P> type) {

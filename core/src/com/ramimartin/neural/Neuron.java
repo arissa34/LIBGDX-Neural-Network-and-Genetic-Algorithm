@@ -27,40 +27,19 @@ public class Neuron {
         connectionsOut.add(axon);
     }
 
-    private float[] inputs;
     public void calculate(){
-        if(inputs == null) {
-            inputs = new float[connectionsIn.size];
-        }
-
-        for (int i = 0; i < connectionsIn.size; i++) {
-            inputs[i] = connectionsIn.get(i).getValue();
-        }
-
-        calculate(inputs);
-    }
-
-    public float calculate(float... inputs){
         float sum = 0;
-        for (int i = 0; i < inputs.length; i++) {
-            float weight = 0;
-            if(connectionsIn.size == 0){
-                //Gdx.app.log("", "is Input Neuron");
-                weight = 1;
-            }else {
-                weight = connectionsIn.get(i).getWeight();
-            }
-            sum += inputs[i] * weight;
+        for (int i = 0; i < connectionsIn.size; i++) {
+            float value = connectionsIn.get(i).getValue();
+            float weight = connectionsIn.get(i).getWeight();
+            sum += value * weight;
         }
-        if(connectionsIn.size > 0) {
-            sum += 1; // BIAS
-        }
+        sum += 1; // BIAS
+
         float valueOutput = tanh(sum);
         for (int i = 0; i < connectionsOut.size; i++) {
             connectionsOut.get(i).setValue(valueOutput);
         }
-        //Gdx.app.log("", "valueOutput : "+valueOutput);
-        return valueOutput;
     }
 
     public float tanh(double x){
@@ -69,6 +48,30 @@ public class Neuron {
 
     public float sigmoid(double x){
         return (float) (1 / (1 + Math.exp(x)));
+    }
+
+    public float relu(double x) {
+        return (float) Math.max(0, x);
+    }
+
+    public float leakyRelu(double x) {
+        return (float) (x > 0 ? x : 0.01 * x);
+    }
+
+    public float[] softmax(float[] inputs) {
+        float sum = 0;
+        float[] outputs = new float[inputs.length];
+        for (float input : inputs) {
+            sum += Math.exp(input);
+        }
+        for (int i = 0; i < inputs.length; i++) {
+            outputs[i] = (float) (Math.exp(inputs[i]) / sum);
+        }
+        return outputs;
+    }
+
+    public float elu(double x, double alpha) {
+        return (float) (x > 0 ? x : alpha * (Math.exp(x) - 1));
     }
 
     public float getX(){

@@ -67,11 +67,15 @@ public class HudStage extends Stage implements StageRenderListener, UpdatableLis
         );
     }
 
+    private int bestFinnessEver = 0;
     private void updatePosulationLabel(){
         if(population == null) return;
         generationLabel.setText("Generation : "+population.generation);
         populationLabel.setText("Population : "+population.populationAlive()+"/"+population.populationSize);
-        bestFitnessLabel.setText("Best Fitness : "+Math.round(population.bestFitnessEver/10));
+        if(bestFinnessEver<Math.round(population.getFittest(0).getFitness().getValue())){
+            bestFinnessEver = Math.round(population.getFittest(0).getFitness().getValue());
+        }
+        bestFitnessLabel.setText("Best Fitness : "+bestFinnessEver);
     }
 
     @Override

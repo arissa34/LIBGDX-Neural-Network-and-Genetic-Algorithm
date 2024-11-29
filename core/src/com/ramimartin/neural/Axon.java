@@ -37,8 +37,12 @@ public class Axon {
         this.value = value;
     }
 
+    public Axon clone() {
+        return new Axon(in, out, weight);
+    }
+
     public void render(float x, float y, ShapeRenderer shapeRenderer){
-        if(value >= 0){
+        if(value <= 0){
             shapeRenderer.setColor(Color.GREEN);
         }else{
             shapeRenderer.setColor(Color.RED);
